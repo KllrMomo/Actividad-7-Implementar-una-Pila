@@ -1,0 +1,143 @@
+// Codificar un algoritmo para evaluar y resolver operación aritmética o expresiones infijas, 
+//estas expresiones utilizan paréntesis para agrupar operación, son muy fácil de entender para los humanos, 
+//pero las computadoras es difícil evaluarlas. Para poder solucionar este problema es necesario convertir 
+//la expresión infija a expresión postfija mediante la utilización de una pila.
+
+#include <stdio.h>
+#include <ctype.h>
+#include <stdlib.h>
+
+#define MAX 100
+
+// Estructura de la pila
+typedef struct {
+    int top;
+    char arr[MAX];
+} Pila;
+
+// Inicializa la pila
+void inicializarPila(Pila* s) {
+    s->top = -1;
+}
+
+// Comprueba si la pila está vacía
+int pilaVacia(Pila* s) {
+    return s->top == -1;
+}
+
+// Inserta un elemento en la pila
+void push(Pila* s, char elem) {
+    if (s->top < MAX - 1) {
+        s->arr[++(s->top)] = elem;
+    }
+}
+
+// Elimina el elemento en la parte superior de la pila
+char pop(Pila* s) {
+    if (pilaVacia(s)) return -1;
+    return s->arr[(s->top)--];
+}
+
+// Ver el tope de la pila sin eliminar
+char peek(Pila* s) {
+    if (pilaVacia(s)) return -1;
+    return s->arr[s->top];
+}
+
+// Función que devuelve la precedencia de los operadores
+int precedencia(char operador) {
+    switch (operador) {
+        case '+':
+        case '-':
+            return 1;
+        case '*':
+        case '/':
+            return 2;
+        default:
+            return 0;
+    }
+}
+
+// Convierte una expresión infija a postfija
+void infijaAPostfija(char infija[], char postfija[]) {
+    Pila s;
+    inicializarPila(&s);
+    int i = 0, j = 0;
+    char c;
+
+    while (infija[i] != '\0') {
+        c = infija[i];
+
+        if (isdigit(c)) {  // Si es un número, lo añadimos a la postfija
+            postfija[j++] = c;
+        }
+        else if (c == '(') {
+            push(&s, c);
+        }
+        else if (c == ')') {
+            while (!pilaVacia(&s) && peek(&s) != '(') {
+                postfija[j++] = pop(&s);
+            }
+            pop(&s);  // Descartamos el '('
+        }
+        else {  // Es un operador
+            while (!pilaVacia(&s) && precedencia(peek(&s)) >= precedencia(c)) {
+                postfija[j++] = pop(&s);
+            }
+            push(&s, c);
+        }
+        i++;
+    }
+
+    // Vaciamos la pila
+    while (!pilaVacia(&s)) {
+        postfija[j++] = pop(&s);
+    }
+
+    postfija[j] = '\0';
+}
+
+// Evalúa la expresión postfija
+int evaluarPostfija(char postfija[]) {
+    Pila s;
+    inicializarPila(&s);
+    int i = 0;
+    char c;
+    int op1, op2;
+
+    while (postfija[i] != '\0') {
+        c = postfija[i];
+
+        if (isdigit(c)) {
+            push(&s, c - '0');  // Convertimos carácter a número y lo apilamos
+        }
+        else {  // Es un operador
+            op2 = pop(&s);
+            op1 = pop(&s);
+            switch (c) {
+                case '+': push(&s, op1 + op2); break;
+                case '-': push(&s, op1 - op2); break;
+                case '*': push(&s, op1 * op2); break;
+                case '/': push(&s, op1 / op2); break;
+            }
+        }
+        i++;
+    }
+
+    return pop(&s);  // El resultado final está en la pila
+}
+
+int main() {
+    char infija[] = "(6*8)+(2*3)";
+    char postfija[MAX];
+
+    // Convertimos a postfija
+    infijaAPostfija(infija, postfija);
+    printf("Expresion postfija: %s\n", postfija);
+
+    // Evaluamos la expresión postfija
+    int resultado = evaluarPostfija(postfija);
+    printf("Resultado de la expresion: %d\n", resultado);
+
+    return 0;
+}
